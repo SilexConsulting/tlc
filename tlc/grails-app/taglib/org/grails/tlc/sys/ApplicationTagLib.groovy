@@ -210,7 +210,7 @@ class ApplicationTagLib {
         def bean = attrs.bean
         def field = attrs.field
         def value = attrs.value
-        def scale = attrs.scale
+            def scale = attrs.scale
         if (scale && scale instanceof String) scale = scale.toInteger()
         def grouped = attrs.grouped
         if (grouped && grouped instanceof String) grouped = grouped.toBoolean()
@@ -218,13 +218,13 @@ class ApplicationTagLib {
 
         // Handle special case of boolean where we want to output an <img> tag
         if (value != null && value instanceof Boolean) {
-            out << '<img src="'
-            out << resource(dir: 'images', file: "${value}.png")
-            out << '" alt="'
-            out << g.msg(code: "default.boolean.${value}", default: "${value}")
-            out << '" class="borderless"/>'
+            out << raw ('<img src="' +
+                resource(dir: 'images', file: "${value}.png") +
+                '" alt="' +
+                g.msg(code: "default.boolean.${value}", default: "${value}") +
+                '" class="borderless"/>')
         } else {
-            out << utilService.format(value, scale, grouped, attrs.locale).encodeAsHTML()
+            out << raw (utilService.format(value, scale, grouped, attrs.locale).encodeAsHTML())
         }
     }
 

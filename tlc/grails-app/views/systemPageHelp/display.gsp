@@ -28,7 +28,7 @@
 <div id="main-content" class="body" role="main">
     <g:if test="${displayInstance.lines}">
         <div class="pageHelp">
-            <g:each in="${displayInstance.lines}" var="line">${line}
+            <g:each in="${displayInstance.lines}" var="line">${line.encodeAsRaw()}
             </g:each>
         </div>
     </g:if>

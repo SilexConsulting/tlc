@@ -70,6 +70,14 @@ class UtilService {
     def pageHelpService
     def reportService
 
+    def messageSource
+
+    def message(Map attrs) {
+        def locale = attrs.locale ?: currentLocale()
+        def args = attrs.args ? attrs.args as Object[] : null
+        return messageSource.getMessage(attrs.code, args, attrs.default ?: attrs.code, locale)
+    }
+
     // Read a single line of text from a URL (passed as a string) with optional
     // connect and read timeouts (given in seconds). Returns null if the content
     // cannot be retrieved. Read timeout will be set to the same as the connect
@@ -102,9 +110,10 @@ class UtilService {
     // Returns a BigDecimal exchange rate rounded to 6 decimal places or null
     // if no exchange rate could be retrieved.
     def readExchangeRate(code) {
-        def rate = readGoogleRate(code)
-        if (!rate) rate = readYahooRate(code)
-        return rate
+        def rate = readExchangeRateApi(code)
+        //def rate = readGoogleRate(code)
+        //if (!rate) rate = readYahooRate(code)
+        return 1
     }
 
     // Convert between units of the same measure
@@ -1994,6 +2003,18 @@ class UtilService {
         //        def messageSource = grailsAttributes.getApplicationContext().getBean("messageSource")
         //        def locale = RequestContextUtils.getLocale(request)
         return RequestContextHolder.currentRequestAttributes().getSession()
+    }
+
+    private readExchangeRateApi(code) {
+        def apiKey = SecurityConfiguration.exchangeApiKey
+        def data = readURL("https://v6.exchangerate-api.com/v6/${apiKey}/pair/${BASE_CURRENCY_CODE}/${code}")
+        if (data) {
+            data = JSON.parse(data)
+            if (data.result != 'error'){
+                return data.conversion_rate.toBigDecimal().setScale(6, RoundingMode.HALF_UP)
+            }
+        }
+        return null
     }
 
     private readGoogleRate(code) {

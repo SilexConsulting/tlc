@@ -47,6 +47,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
     <title><g:layoutTitle default="TLC by Paul Fernley"/></title>
     <link rel="shortcut icon" href="${resource(dir: 'images', file: 'favicon.ico')}" type="image/x-icon"/>
+    <r:require modules="jquery"/>
     <g:layoutHead/>
     <r:layoutResources/>
 </head>

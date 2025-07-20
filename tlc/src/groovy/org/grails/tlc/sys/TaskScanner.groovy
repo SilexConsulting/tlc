@@ -19,14 +19,16 @@
  */
 package org.grails.tlc.sys
 
+import org.hibernate.HibernateException
+
 import java.nio.channels.ClosedByInterruptException
 import org.apache.log4j.Logger
 import org.hibernate.FlushMode
 import org.hibernate.Session
 import org.hibernate.SessionFactory
-import org.springframework.orm.hibernate3.SessionFactoryUtils
-import org.springframework.orm.hibernate3.SessionHolder
+import org.springframework.orm.hibernate4.SessionHolder
 import org.springframework.transaction.support.TransactionSynchronizationManager
+
 
 class TaskScanner extends Thread {
 
@@ -90,24 +92,33 @@ class TaskScanner extends Thread {
     }
 
     private bindSession() {
-        def holder = TransactionSynchronizationManager.getResource(sessionFactory)
-        if (holder) {
-            holder.getSession().flush()
-            bound = false
-        } else {
-            Session session = SessionFactoryUtils.getSession(sessionFactory, true)
-            session.setFlushMode(FlushMode.AUTO)
-            TransactionSynchronizationManager.bindResource(sessionFactory, new SessionHolder(session))
+        SessionHolder holder = (SessionHolder) TransactionSynchronizationManager.getResource(sessionFactory)
+
+        if (holder == null) {
+            Session session = sessionFactory.openSession()
+            holder = new SessionHolder(session)
+            TransactionSynchronizationManager.bindResource(sessionFactory, holder)
             bound = true
+        } else {
+            holder.getSession().clear()
+            bound = false
         }
     }
 
     private unbindSession() {
         if (bound) {
             bound = false
-            Session session = ((SessionHolder) TransactionSynchronizationManager.unbindResource(sessionFactory)).getSession()
-            if (session.getFlushMode() != FlushMode.MANUAL) session.flush()
-            SessionFactoryUtils.closeSession(session)
+            SessionHolder sessionHolder = (SessionHolder) TransactionSynchronizationManager.unbindResource(sessionFactory)
+            Session session = sessionHolder.getSession()
+            if (session.getFlushMode() != FlushMode.MANUAL) {
+                session.flush()
+            }
+            try {
+                session.close()
+            } catch (HibernateException e) {
+                log.warn("Unable to close Hibernate Session", e)
+            }
         }
     }
+
 }

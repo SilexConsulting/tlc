@@ -58,6 +58,7 @@
         var ajaxErrorDefault = '${g.message(code: 'generic.ajax.default', default: 'An unspecified error occurred communicating with the server (the error code was {0})', encodeAs: 'JavaScript')}';
     </script>
     <r:require module="core"/>
+    <r:require modules="jquery"/>
     <g:layoutHead/>
     <r:layoutResources/>
 </head>

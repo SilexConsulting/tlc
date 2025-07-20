@@ -82,9 +82,9 @@
 
                     <td>${display(bean:chartSectionInstance, field:'autoCreate')}</td>
 
-                    <td>${segmentsList[i]}</td>
+                    <td>${segmentsList[i].encodeAsRaw()}</td>
 
-                    <td>${defaultsList[i]}</td>
+                    <td>${defaultsList[i].encodeAsRaw()}</td>
 
                     <g:if test="${chartSectionInstance.segment1}">
                         <td><g:drilldown controller="chartSectionRange" value="${chartSectionInstance.id}"/></td>

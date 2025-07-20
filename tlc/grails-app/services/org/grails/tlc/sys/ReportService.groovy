@@ -19,6 +19,9 @@
  */
 package org.grails.tlc.sys
 
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeoutException
 import java.util.concurrent.atomic.AtomicLong
 import net.sf.jasperreports.engine.JRParameter
 import net.sf.jasperreports.engine.JasperExportManager
@@ -63,9 +66,32 @@ class ReportService {
 
         if (parameters.NO_FILE_IF_NO_PAGES && !filledReport?.getPages()) return null
         File outputFile = outputFilePDF(report)
-        JasperExportManager.exportReportToPdfFile(filledReport, outputFile.path)
+        exportWithTimeout(filledReport, outputFile)
 
         return outputFile
+    }
+
+    def exportWithTimeout(JasperPrint filledReport, File outputFile) {
+        def future = Executors.newSingleThreadExecutor().submit({ ->
+            try {
+                println "Starting export..."
+                JasperExportManager.exportReportToPdfFile(filledReport, outputFile.path)
+                println "Export completed"
+                return true
+            } catch (Exception e) {
+                e.printStackTrace()
+                return false
+            }
+        })
+
+        try {
+            future.get(30, TimeUnit.SECONDS) // Wait up to 30 seconds
+            println "Export successful"
+        } catch (TimeoutException e) {
+            println "Export timed out!"
+            future.cancel(true)
+            throw new RuntimeException("PDF export timed out after 30 seconds")
+        }
     }
 
     static stop() {

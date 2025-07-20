@@ -22,6 +22,7 @@ import org.grails.tlc.sys.BasicDatePropertyEditorRegistrar
 import org.grails.tlc.sys.DatabaseMessageSource
 import org.grails.tlc.sys.TaskExecutable
 import org.grails.tlc.sys.TaskScanner
+import org.grails.tlc.sys.UtilService
 import org.grails.tlc.sys.App
 
 beans = {

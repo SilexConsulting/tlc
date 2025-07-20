@@ -19,23 +19,25 @@
  */
 package org.grails.tlc.sys
 
+import org.apache.log4j.Level
 import org.grails.tlc.books.BookService
 import org.grails.tlc.books.PostingService
 import grails.plugin.mail.MailService
 import grails.util.GrailsUtil
 import grails.util.GrailsWebUtil
+import org.hibernate.HibernateException
+
 import java.nio.channels.ClosedByInterruptException
 import org.apache.log4j.Logger
 import org.codehaus.groovy.grails.commons.GrailsApplication
 import org.hibernate.FlushMode
-import org.hibernate.Session
-import org.hibernate.SessionFactory
 import org.springframework.context.MessageSource
-import org.springframework.orm.hibernate3.SessionFactoryUtils
-import org.springframework.orm.hibernate3.SessionHolder
-import org.springframework.transaction.support.TransactionSynchronizationManager
 import org.springframework.web.context.request.RequestContextHolder
 import org.springframework.web.context.support.WebApplicationContextUtils
+import org.hibernate.Session
+import org.hibernate.SessionFactory
+import org.springframework.orm.hibernate4.SessionHolder
+import org.springframework.transaction.support.TransactionSynchronizationManager
 import org.grails.tlc.corp.*
 
 class TaskExecutable implements Runnable {
@@ -215,6 +217,10 @@ class TaskExecutable implements Runnable {
 
     def createReportPDF(report, parameters, omitTaskParameters = false) {
 
+        // Debug report generation
+        Logger jrLogger = Logger.getLogger("net.sf.jasperreports")
+        jrLogger.setLevel(Level.DEBUG)
+
         // Need to add standard messages here since reportService doesn't have an active message source
         parameters.endOfReport = message(code: 'generic.report.ending', default: '--End of Report--')
         parameters.reportParameters = message(code: 'generic.report.parameters', default: 'Report Parameters')
@@ -327,15 +333,16 @@ class TaskExecutable implements Runnable {
     }
 
     private bindSession() {
-        def holder = TransactionSynchronizationManager.getResource(runSessionFactory)
-        if (holder) {
-            holder.getSession().flush()
-            runBound = false
-        } else {
-            Session session = SessionFactoryUtils.getSession(runSessionFactory, true)
-            session.setFlushMode(FlushMode.AUTO)
-            TransactionSynchronizationManager.bindResource(runSessionFactory, new SessionHolder(session))
+        SessionHolder holder = (SessionHolder) TransactionSynchronizationManager.getResource(runSessionFactory)
+
+        if (holder == null) {
+            Session session = runSessionFactory.openSession()
+            holder = new SessionHolder(session)
+            TransactionSynchronizationManager.bindResource(runSessionFactory, holder)
             runBound = true
+        } else {
+            holder.getSession().clear()
+            runBound = false
         }
 
         // Attach a dummy web request to this thread so that we can pretend
@@ -349,13 +356,17 @@ class TaskExecutable implements Runnable {
     private unbindSession() {
         if (runBound) {
             runBound = false
+            SessionHolder sessionHolder = (SessionHolder) TransactionSynchronizationManager.unbindResource(runSessionFactory)
+            Session session = sessionHolder.getSession()
+            if (session.getFlushMode() != FlushMode.MANUAL) {
+                session.flush()
+            }
             try {
-                Session session = ((SessionHolder) TransactionSynchronizationManager.unbindResource(runSessionFactory)).getSession()
-                if (session.getFlushMode() != FlushMode.MANUAL) session.flush()
-                SessionFactoryUtils.closeSession(session)
-            } catch (Exception ex) {}
+                session.close()
+            } catch (HibernateException e) {
+                log.warn("Unable to close Hibernate Session", e)
+            }
         }
-
         // Release the dummy request we created and attached to this thread
         RequestContextHolder.setRequestAttributes(null)
     }

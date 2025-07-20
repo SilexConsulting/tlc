@@ -33,10 +33,18 @@ grails.mime.types = [
 //grails.urlmapping.cache.maxsize = 1000
 
 // What URL patterns should be processed by the resources plugin
-grails.resources.adhoc.patterns = ['/images/*', '/css/*', '/js/*', '/plugins/*']
+grails.resources.adhoc.patterns = ['/images/*', '/css/*', '/js/*', '/plugins/*', '/less/*']
+grails.resources.adhoc.includes = ['/images/**', '/css/**', '/js/**', '/plugins/**', '/less/**']
+grails.resources.processing.enabled = true
+grails.resources.debug = false
+grails.resources.mapper.hashandcache.excludes = ['**/*.js']
+grails.resources.mappers.lesscss.compress = false
+grails.resources.mappers.lesscss.less.extensions = ['less']
+grails.resources.mappers.lesscss.less.paths = ["${basedir}/web-app/less/"]
+
 
 // The default codec used to encode data with ${}
-grails.views.default.codec = "none" // none, html, base64
+grails.views.default.codec = "html"
 grails.views.gsp.encoding = "UTF-8"
 grails.converters.encoding = "UTF-8"
 // enable Sitemesh preprocessing of GSP pages
@@ -60,28 +68,11 @@ grails.exceptionresolver.params.exclude = ['password']
 grails.hibernate.cache.queries = false
 
 environments {
-    development {
-        grails.logging.jul.usebridge = true
-    }
-    production {
-        grails.logging.jul.usebridge = false
-        // TODO: grails.serverURL = "http://www.changeme.com"
-    }
+    grails.logging.jul.usebridge = true
 }
 
 // log4j configuration
 log4j = {
-    environments {
-        production {
-            appenders {
-                rollingFile name: 'logfile', file: '/var/log/tomcat7.0/tlc.log'  // TODO: Set to a directory that tomcat can write to
-            }
-            root {
-                error 'logfile'
-            }
-        }
-    }
-
     error  'org.codehaus.groovy.grails.web.servlet',         // controllers
             'org.codehaus.groovy.grails.web.pages',          // GSP
             'org.codehaus.groovy.grails.web.sitemesh',       // layouts
@@ -171,3 +162,12 @@ books.customer.codes.uppercase = true
 
 // Supplier account codes are converted to upper case if true. *NO* case change if false. Default is true.
 books.supplier.codes.uppercase = true
+
+grails.resources.modules = {
+    jquery {
+        defaultBundle false
+        resource id: 'js',
+                url: [plugin: 'jquery', dir: 'js/jquery', file: 'jquery-1.11.1.min.js', ],
+                disposition: 'head'
+    }
+}
