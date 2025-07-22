@@ -1,0 +1,35 @@
+services:
+  tlc-mysql:
+    container_name: tlc-mysql
+    command: mysqld --default-authentication-plugin=mysql_native_password
+    image: mysql:8.3
+    restart: always
+    environment:
+      MYSQL_DATABASE: 'development'
+      MYSQL_USER: 'developer'
+      MYSQL_PASSWORD: 'developing'
+      MYSQL_ROOT_PASSWORD: 'root-password'
+      # Get a real key here: https://www.exchangerate-api.com/
+      EXCHANGE_API_KEY: "DUMMY_KEY"
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+    expose:
+      - '3306'
+    volumes:
+      - mysql-data:/var/lib/mysql
+  app:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      CATALINA_OPTS: >-
+        -Dhibernate.connection.driver_class=com.mysql.cj.jdbc.Driver
+        -Dhibernate.connection.url="jdbc:mysql://tlc-mysql:3306/development?useSSL=false&allowPublicKeyRetrieval=true"
+        -Dhibernate.connection.username=root
+        -Dhibernate.connection.password=root-password
+        -Dhibernate.dialect=org.hibernate.dialect.MySQLDialect
+    depends_on:
+      tlc-mysql:
+        condition: service_healthy
+volumes:
+  mysql-data:

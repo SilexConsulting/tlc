@@ -1,0 +1,10 @@
+.git
+.gitignore
+.env
+*.md
+target/
+logs/
+.idea/
+*.iml
+*.iws
+*.ipr
